@@ -1,0 +1,64 @@
+version: '3.1'
+services:
+  mysql:
+    image: mysql:5.7
+    volumes:
+      # 数据库还原目录 可将需要还原的sql文件放在这里
+      - ./sql:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_DATABASE: xxl_job
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_HOST: '%'
+      TZ: PRC
+    container_name: mysql
+    restart: "no"
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    networks:
+      - overlay
+
+  xxl_job_admin1:
+    image: xuxueli/xxl-job-admin:2.3.0
+    container_name: xxl_job_admin1
+    restart: "no"
+    volumes:
+      - ./config/application.properties:/application.properties
+    depends_on:
+      - mysql
+    expose:
+      - "8080"
+    networks:
+      - overlay
+
+  xxl_job_admin2:
+    image: xuxueli/xxl-job-admin:2.3.0
+    container_name: xxl_job_admin2
+    restart: "no"
+    volumes:
+      - ./config/application.properties:/application.properties
+    depends_on:
+      - mysql
+    expose:
+      - "8080"
+    networks:
+      - overlay
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.13
+    restart: "no"
+    ports:
+      - 80:80
+    #   - 443:443
+    volumes:
+      - ./config/nginx:/etc/nginx/conf.d
+    depends_on:
+      - xxl_job_admin1
+      - xxl_job_admin2
+    networks:
+      - overlay
+
+networks:
+  overlay:
